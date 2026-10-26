@@ -44,18 +44,18 @@
     {
       title: 'Social Integration',
       items: [
-        'Meeting metamors (partners’ other partners)',
+        'Meeting metamours (partners’ other partners)',
         'Meeting children',
         'Meeting parents/siblings/extended family',
         'Meeting friends',
         'Spending time as a couple with friends/family',
-        'Positive relationships with metamors',
+        'Positive relationships with metamours',
         'Serving as +1 for social events',
         'Presenting as a couple in public settings',
         'Following on social media',
         'Presenting as a couple on social media',
         'Presenting as a couple in professional settings',
-        'Joint vacations with family/metamors',
+        'Joint vacations with family/metamours',
       ],
     },
     {
@@ -104,7 +104,7 @@
       ],
     },
     {
-      title: 'Financial Mgt',
+      title: 'Financial Management',
       items: [
         'Shared bank account(s)',
         'Mutual contributions to vacation/activity fund',
