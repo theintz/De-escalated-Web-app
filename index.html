@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Relationship Menu</title>
+  <meta name="description" content="A non-escalator relationship menu for two people: fill it out independently, then compare.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="banner">
+    <h1>Non-Escalator Relationship Menu</h1>
+  </header>
+
+  <main>
+    <!-- Intro -->
+    <section id="view-intro" class="view">
+      <div id="partner-notice" class="notice" hidden>
+        Your partner has filled out their menu. Fill out yours to see how your answers compare.
+        Their answers stay hidden until you've submitted yours.
+      </div>
+      <p>
+        This tool is a discussion aid for people in a relationship to identify and discuss their
+        personal desires and relationship expectations. It's only the start of a conversation:
+        revisit the menu when circumstances or relationships change.
+      </p>
+      <ol class="steps">
+        <li>Each of you fills out the menu on your own.</li>
+        <li>You each get a code. Send yours to the other person.</li>
+        <li>Enter the other person's code to see where your answers match.</li>
+      </ol>
+      <p class="muted small">
+        Nothing is stored on a server. Your answers live only in your code and in this browser.
+        Anyone who has your code can see your answers, so only share it with your partner.
+      </p>
+      <div class="actions">
+        <button id="btn-start" class="primary">Fill out the menu</button>
+        <button id="btn-have-code" class="secondary" hidden>I already have my code</button>
+      </div>
+    </section>
+
+    <!-- Form -->
+    <section id="view-form" class="view" hidden>
+      <div class="legend" id="legend"></div>
+      <form id="menu-form"></form>
+      <div class="actions sticky">
+        <span id="progress" class="muted small"></span>
+        <button id="btn-submit" class="primary" type="button">Done – get my code</button>
+      </div>
+    </section>
+
+    <!-- My code -->
+    <section id="view-code" class="view" hidden>
+      <h2>Your code</h2>
+      <p>Send this code, or the link, to your partner. They'll need it to compare.</p>
+      <div class="code-box">
+        <code id="my-code"></code>
+        <button id="btn-copy-code" class="secondary small-btn" type="button">Copy code</button>
+      </div>
+      <div class="code-box">
+        <input id="my-link" readonly aria-label="Share link">
+        <button id="btn-copy-link" class="secondary small-btn" type="button">Copy link</button>
+      </div>
+      <p class="muted small">Keep your own code too. You can use it to come back to your answers later.</p>
+      <div class="actions">
+        <button id="btn-to-compare" class="primary" type="button">Compare with partner</button>
+        <button id="btn-edit" class="secondary" type="button">Edit my answers</button>
+      </div>
+    </section>
+
+    <!-- Compare -->
+    <section id="view-compare" class="view" hidden>
+      <h2>Compare</h2>
+      <form id="compare-form" novalidate>
+        <label for="input-mine">Your code</label>
+        <input id="input-mine" autocomplete="off" spellcheck="false" placeholder="1XXXX-XXXXX-…">
+        <label for="input-theirs">Your partner's code</label>
+        <input id="input-theirs" autocomplete="off" spellcheck="false" placeholder="1XXXX-XXXXX-…">
+        <p id="compare-error" class="error" role="alert" hidden></p>
+        <div class="actions">
+          <button class="primary" type="submit">Show results</button>
+          <button id="btn-compare-back" class="secondary" type="button">Back</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Results -->
+    <section id="view-results" class="view" hidden>
+      <h2>Results</h2>
+      <p class="muted small">Tap a category to filter. This is a starting point for a conversation, not a verdict.</p>
+      <div id="summary" class="summary"></div>
+      <div id="results"></div>
+      <div class="actions">
+        <button id="btn-print" class="secondary" type="button">Print</button>
+        <button id="btn-restart" class="secondary" type="button">Start over</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/menu.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
