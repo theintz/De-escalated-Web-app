@@ -129,7 +129,7 @@
   // Answer values. 0 means "not answered".
   const NONE = 0, MUST = 1, LIKE = 2, MAYBE = 3, OFF = 4;
   const RATINGS = [
-    { value: MUST, label: 'Must have', short: 'Must', icon: '●', description: 'I need this' },
+    { value: MUST, label: 'Must have', short: 'Must', icon: '●', description: '' },
     { value: LIKE, label: 'Like to have', short: 'Like', icon: '◉', description: 'Don’t need it, but nice to have' },
     { value: MAYBE, label: 'Maybe', short: 'Maybe', icon: '?', description: 'Maybe, but perfectly happy without' },
     { value: OFF, label: 'Off limits', short: 'Off', icon: '⊘', description: 'Preferably never' },

@@ -93,7 +93,7 @@
     el.innerHTML = M.RATINGS.map((r) => `
       <div class="guide-item">
         <span class="guide-label r${r.value}"><span class="icon" aria-hidden="true">${r.icon}</span>${r.label}</span>
-        <span class="guide-desc">${r.description}</span>
+        ${r.description ? `<span class="guide-desc">${r.description}</span>` : ''}
       </div>`).join('');
   }
 
@@ -103,7 +103,7 @@
         <span class="item-label" id="${name}-label">${esc(label)}${extra || ''}</span>
         <span class="choices">
           ${M.RATINGS.map((r) => `
-            <label class="choice r${r.value}" title="${r.label}: ${r.description}">
+            <label class="choice r${r.value}" title="${r.label}${r.description ? `: ${r.description}` : ''}">
               <input type="radio" name="${name}" value="${r.value}" ${value === r.value ? 'checked' : ''}>
               <span><span class="icon" aria-hidden="true">${r.icon}</span>${r.short}</span>
             </label>`).join('')}
