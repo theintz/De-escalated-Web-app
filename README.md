@@ -37,7 +37,8 @@ npm test    # unit tests for encoding and matching (Node 18+)
 
 ## Deployment
 
-It's a plain static site, so any static host works. Publish the repository root:
+`.github/workflows/pages.yml` runs the tests on every push. On the default branch, it then deploys `index.html`, `css/` and `js/` to GitHub Pages.
 
-- **GitHub Pages**: Settings → Pages → deploy from branch, folder `/ (root)`. Free for public repos; private repos need a paid plan.
-- **Netlify / Vercel / Cloudflare Pages**: import the GitHub repo with no build command and the output directory set to the repository root. Free tier, deploys on every push.
+One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**. Then re-run the workflow, or push again. The site is served at `https://theintz.github.io/De-escalated-Web-app/`.
+
+Any other static host (Netlify, Vercel, Cloudflare Pages) also works: set no build command and use the repository root as the output directory.
