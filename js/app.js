@@ -89,9 +89,12 @@
   }
 
   // ---- form ----
-  function renderLegend() {
-    $('legend').innerHTML = M.RATINGS.map((r) =>
-      `<span class="legend-item r${r.value}"><span class="icon">${r.icon}</span>${r.label}</span>`).join('');
+  function renderGuide(el) {
+    el.innerHTML = M.RATINGS.map((r) => `
+      <div class="guide-item">
+        <span class="guide-label r${r.value}"><span class="icon" aria-hidden="true">${r.icon}</span>${r.label}</span>
+        <span class="guide-desc">${r.description}</span>
+      </div>`).join('');
   }
 
   function itemRow(name, label, value, extra) {
@@ -100,7 +103,7 @@
         <span class="item-label" id="${name}-label">${esc(label)}${extra || ''}</span>
         <span class="choices">
           ${M.RATINGS.map((r) => `
-            <label class="choice r${r.value}" title="${r.label}">
+            <label class="choice r${r.value}" title="${r.label}: ${r.description}">
               <input type="radio" name="${name}" value="${r.value}" ${value === r.value ? 'checked' : ''}>
               <span><span class="icon" aria-hidden="true">${r.icon}</span>${r.short}</span>
             </label>`).join('')}
@@ -342,7 +345,8 @@
   });
 
   // ---- start ----
-  renderLegend();
+  renderGuide($('intro-guide'));
+  renderGuide($('legend'));
   $('form-about').innerHTML = document.querySelector('#view-intro .about').innerHTML;
   $('form-notice').hidden = !state.partnerCode;
   if (state.myCode) $('btn-start').textContent = 'Edit my answers';
