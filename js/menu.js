@@ -100,7 +100,7 @@
         'Spending the night',
         'Shared hobbies or activities',
         'Vacations together as couple',
-        'Calendar mgt/scheduling initiation',
+        'Calendar management/scheduling initiation',
       ],
     },
     {
