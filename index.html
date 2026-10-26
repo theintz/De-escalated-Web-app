@@ -52,14 +52,19 @@
     <!-- My code -->
     <section id="view-code" class="view" hidden>
       <h2>Your code</h2>
-      <p>Send this code, or the link, to your partner. They'll need it to compare.</p>
-      <div class="code-box">
-        <code id="my-code"></code>
-        <button id="btn-copy-code" class="secondary small-btn" type="button">Copy code</button>
+      <p>Send the link to your partner. Opening it lets them compare once they've filled out theirs.</p>
+      <div class="actions share">
+        <a id="btn-whatsapp" class="button primary" href="#" target="_blank" rel="noopener">Send via WhatsApp</a>
+        <button id="btn-share" class="secondary" type="button" hidden>Share…</button>
       </div>
       <div class="code-box">
         <input id="my-link" readonly aria-label="Share link">
         <button id="btn-copy-link" class="secondary small-btn" type="button">Copy link</button>
+      </div>
+      <p class="muted small">Or send just the code. They can enter it after filling out their own menu.</p>
+      <div class="code-box">
+        <code id="my-code"></code>
+        <button id="btn-copy-code" class="secondary small-btn" type="button">Copy code</button>
       </div>
       <p class="muted small">Keep your own code too. You can use it to come back to your answers later.</p>
       <div class="actions">

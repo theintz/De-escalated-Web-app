@@ -76,11 +76,13 @@ h2 { margin-top: 8px; }
 }
 
 /* Buttons */
-button { font: inherit; cursor: pointer; border-radius: 8px; padding: 10px 18px; }
+button, a.button { font: inherit; cursor: pointer; border-radius: 8px; padding: 10px 18px; }
+a.button { display: inline-block; text-decoration: none; }
 .primary { background: var(--brand-dark); color: var(--bg); border: 1px solid var(--brand-dark); font-weight: 600; }
 .secondary { background: transparent; color: var(--brand-dark); border: 1px solid var(--brand-dark); }
 .small-btn { padding: 6px 12px; font-size: 0.875rem; white-space: nowrap; }
 .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 20px 0; }
+.actions.share { margin: 12px 0 4px; }
 .actions.sticky {
   position: sticky;
   bottom: 0;

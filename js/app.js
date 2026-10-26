@@ -32,7 +32,8 @@
   }
 
   // A shared link carries the partner's code in the URL fragment (never sent to a server).
-  const hashCode = new URLSearchParams(location.hash.slice(1)).get('c');
+  // Format: #CODE (older links used #c=CODE).
+  const hashCode = location.hash.slice(1).replace(/^c=/, '');
   if (hashCode) {
     const code = validCode(hashCode);
     if (code && code !== state.myCode) {
@@ -102,7 +103,13 @@
   // ---- my code ----
   function showCode() {
     $('my-code').textContent = M.format(state.myCode);
-    $('my-link').value = `${location.origin}${location.pathname}#c=${state.myCode}`;
+    const link = `${location.origin}${location.pathname}#${state.myCode}`;
+    $('my-link').value = link;
+    // Link on its own line with nothing after it, so messengers linkify it cleanly.
+    const message = `I filled out the relationship menu. Fill out yours and we can compare our answers:\n${link}`;
+    $('btn-whatsapp').href = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    $('btn-share').hidden = !navigator.share;
+    $('btn-share').onclick = () => navigator.share({ text: message }).catch(() => { /* cancelled */ });
     $('btn-to-compare').textContent = state.partnerCode ? 'See results' : 'Compare with partner';
     show('code');
   }

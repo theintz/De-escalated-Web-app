@@ -5,7 +5,7 @@ A static web app for two people to fill out a non-escalator relationship menu on
 ## How it works
 
 1. Each person rates every item: **Must have**, **Like to have**, **Maybe** or **Off limits**.
-2. Each person gets a code (e.g. `110ZT-ET0KJ-…`) and a share link, then sends them to the other person.
+2. Each person gets a code (e.g. `110ZT-ET0KJ-…`) and a share link (`https://…/#110ZTET0KJ…`), sent with a **Send via WhatsApp** button, the phone's share sheet, or copy and paste.
 3. Entering the partner's code, or opening their link, shows both sets of answers side by side. It only works once you've submitted your own answers.
 
 Results are grouped into tiers:
@@ -20,7 +20,7 @@ Results are grouped into tiers:
 
 ## Stateless by design
 
-There is no backend. The code is the answers themselves: 78 answers packed as a base-5 number, written in Crockford base32, with a version prefix and a checksum character. The share link puts the code in the URL fragment (`#c=…`), so browsers never send it to the server. Drafts and codes are kept in the browser's `localStorage` for convenience.
+There is no backend. The code is the answers themselves: 78 answers packed as a base-5 number, written in Crockford base32, with a version prefix and a checksum character. The share link puts the code in the URL fragment (`#CODE`, letters and digits only), so it survives being pasted into any messenger and is never sent to the server. Drafts and codes are kept in the browser's `localStorage` for convenience.
 
 Anyone who has a code can decode its answers. The code is not encrypted.
 
