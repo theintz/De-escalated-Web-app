@@ -70,7 +70,7 @@
         'Oral sex',
         'Manual sex (fingering)',
         'Mutual masturbation',
-        'Penetration/PIV',
+        'Penetration/PIV (penis-in-vagina)',
         'Using sex toys',
         'Condom/barrier use',
         'Regular STI testing',
