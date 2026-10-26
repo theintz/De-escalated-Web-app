@@ -62,12 +62,41 @@ test('tiers', () => {
   assert.equal(tier(NONE, MUST), 'unanswered');
 });
 
-test('codes without custom items keep the original format', () => {
-  // Links shared before custom items existed must keep working.
+test('new codes are version 2, 40 characters', () => {
   const answers = Array.from({ length: Menu.ITEM_COUNT }, (_, i) => i % 5);
   const code = Menu.encode(answers);
-  assert.match(code, /^1[0-9A-Z]{38}$/);
+  assert.match(code, /^2[0-9A-Z]{39}$/);
   assert.equal(Menu.encode(answers, []), code);
+  assert.match(Menu.format(code), /^(\w{5}-){7}\w{5}$/);
+});
+
+const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+const rejects = (code) => { try { Menu.decode(code); return false; } catch (e) { return true; } };
+const substitute = (code, i, ch) => code.slice(0, i) + ch + code.slice(i + 1);
+const swap = (code, i) => code.slice(0, i) + code[i + 1] + code[i] + code.slice(i + 2);
+
+test('every single-character typo and neighbour swap in the answers part is caught', () => {
+  for (let t = 0; t < 30; t++) {
+    const code = Menu.encode(random());
+    for (let i = 0; i < code.length; i++) {
+      for (const ch of ALPHABET) {
+        if (ch !== code[i]) assert.ok(rejects(substitute(code, i, ch)), `${code} pos ${i} -> ${ch}`);
+      }
+      if (i < code.length - 1 && code[i] !== code[i + 1]) assert.ok(rejects(swap(code, i)), `${code} swap ${i}`);
+    }
+  }
+});
+
+test('every single-character change and neighbour swap in the custom part is caught', () => {
+  const code = Menu.encode(random(), [{ category: 2, text: 'Sunday brunch with friends', rating: Menu.LIKE }]);
+  const dot = code.indexOf('.');
+  for (let i = dot + 1; i < code.length; i++) {
+    for (const ch of B64) {
+      if (ch !== code[i]) assert.ok(rejects(substitute(code, i, ch)), `pos ${i} -> ${ch}`);
+    }
+    if (i < code.length - 1 && code[i] !== code[i + 1]) assert.ok(rejects(swap(code, i)), `swap ${i}`);
+  }
 });
 
 const custom = [

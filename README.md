@@ -23,12 +23,14 @@ Results are grouped into tiers:
 
 There is no backend. Everything lives in the link's fragment (`#…`), which browsers never send to the server:
 
-- `#<answers>`: the fixed items' answers, packed as a base-5 number in Crockford base32, with a version prefix and a checksum. It's 39 characters, short enough to type as a code.
-- `#<answers>.<custom>`: when there are custom items, their category, rating and text, base64url-encoded with a checksum. A damaged or cut-off link is detected and reported.
+- `#<answers>`: the fixed items' answers, packed as a base-5 number in Crockford base32, with a version prefix and two check characters. It's 40 characters, short enough to type as a code.
+- `#<answers>.<custom>`: when there are custom items, their category, rating and text, base64url-encoded, with two check characters.
+
+The check characters hold a value mod 1021, a prime. That catches every single-character typo and every swap of neighbouring characters; other damage gets through only about 1 time in 1,000. There is no error correction: a damaged code is rejected, not repaired. Version 1 codes, with a weaker one-character checksum, are still accepted.
 
 Custom items are matched by category and text. Drafts and links are also kept in the browser's `localStorage` for convenience. Anyone who has a link can decode its answers; nothing is encrypted.
 
-**Changing the menu:** answers are stored by position ("slot"). Never reorder or remove the plain-string items in `js/menu.js`. To add an item, write it as `{ text, slot }` with the next unused slot, anywhere in its category. Older links then show it as unanswered. The 39-character code has room for exactly 79 items, which the menu now uses. Adding an 80th item also needs a decoder change, or old codes will be rejected as the wrong length.
+**Changing the menu:** answers are stored by position ("slot"). Never reorder or remove the plain-string items in `js/menu.js`. To add an item, write it as `{ text, slot }` with the next unused slot, anywhere in its category. Older links then show it as unanswered. The code has room for exactly 79 items, which the menu now uses. Adding an 80th item also needs a decoder change, or old codes will be rejected as the wrong length.
 
 ## Development
 

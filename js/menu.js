@@ -153,29 +153,47 @@
   // ---- code format ----
   // A code is "<answers>" or "<answers>.<custom items>".
   // <answers>: version digit + the fixed items' answers as one base-5 number in
-  //   Crockford base32 + checksum. Short enough to type.
-  // <custom items>: base64url of "<category><rating><text>" lines + checksum.
+  //   Crockford base32 + check characters. Short enough to type.
+  // <custom items>: base64url of "<category><rating><text>" lines + check characters.
   //   Only present when the menu has custom items; then the code is shared as a link.
-  const CODE_VERSION = '1';
+  //
+  // Version 1 (older links, still accepted) has one weak check character.
+  // Version 2 (all new codes) has two, holding a value mod 1021. As 1021 is a prime
+  // larger than any single character change, every single-character typo and every
+  // swap of neighbouring characters is caught; other damage slips through about 1 in 1021.
+  const CODE_VERSION = '2';
   // Crockford base32: no I, L, O, U, so codes are easy to read and type.
   const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
   // Enough base32 digits to hold any 5^ITEM_COUNT value.
   const BODY_LENGTH = Math.ceil((ITEM_COUNT * Math.log2(5)) / 5);
-  const CODE_LENGTH = 1 + BODY_LENGTH + 1; // version + body + checksum
+  const PRIME = 1021;
 
-  function checksum(digits) {
+  function weakChecksum(digits) {
     let sum = 0;
     for (let i = 0; i < digits.length; i++) sum += (i + 1) * ALPHABET.indexOf(digits[i]);
     return ALPHABET[sum % 32];
   }
 
-  // Checksum for the custom part. Always alphanumeric, so the link never ends in
-  // "-" or "_", which messengers may leave out of the link.
-  function textChecksum(s) {
-    let sum = 0;
-    for (let i = 0; i < s.length; i++) sum = (sum * 31 + s.charCodeAt(i)) % 1021;
-    return ALPHABET[sum % 32];
+  // The base32 digits read as one number, mod PRIME.
+  function strongChecksum(digits) {
+    let n = 0;
+    for (const ch of digits) n = (n * 32 + ALPHABET.indexOf(ch)) % PRIME;
+    return checkChars(n);
   }
+
+  // Check characters for the custom part are always alphanumeric, so the link never
+  // ends in "-" or "_", which messengers may leave out of the link.
+  function textHash(s) {
+    let n = 0;
+    for (let i = 0; i < s.length; i++) n = (n * 31 + s.charCodeAt(i)) % PRIME;
+    return n;
+  }
+  const checkChars = (n) => ALPHABET[Math.floor(n / 32)] + ALPHABET[n % 32];
+
+  const FORMATS = {
+    1: { check: weakChecksum, checkLength: 1, textCheck: (s) => ALPHABET[textHash(s) % 32] },
+    2: { check: strongChecksum, checkLength: 2, textCheck: (s) => checkChars(textHash(s)) },
+  };
 
   function cleanText(text) {
     return Array.from(String(text).replace(/\s+/g, ' ').trim()).slice(0, MAX_CUSTOM_LENGTH).join('');
@@ -206,7 +224,7 @@
       n /= 32n;
     }
     const raw = CODE_VERSION + body;
-    return raw + checksum(raw);
+    return raw + FORMATS[CODE_VERSION].check(raw);
   }
 
   // custom: [{ category, text, rating }]
@@ -220,7 +238,7 @@
       return `${c.category}${c.rating}${text}`;
     });
     const b64 = toBase64Url(lines.join('\n'));
-    return `${code}.${b64}${textChecksum(b64)}`;
+    return `${code}.${b64}${FORMATS[CODE_VERSION].textCheck(b64)}`;
   }
 
   function normalizeAnswers(code) {
@@ -233,13 +251,15 @@
     return dot < 0 ? normalizeAnswers(s) : normalizeAnswers(s.slice(0, dot)) + s.slice(dot);
   }
 
-  function decodeAnswers(c) {
+  function decodeAnswers(c, format) {
     if (!c) throw new Error('Please enter a code.');
-    if (c[0] !== CODE_VERSION) throw new Error('This code is from a different version of the menu.');
-    if (c.length !== CODE_LENGTH) throw new Error('This code has the wrong length. Check for missing or extra characters.');
+    if (!format) throw new Error('This code is from a different version of the menu.');
+    if (c.length !== 1 + BODY_LENGTH + format.checkLength) {
+      throw new Error('This code has the wrong length. Check for missing or extra characters.');
+    }
     for (const ch of c) if (ALPHABET.indexOf(ch) < 0) throw new Error(`“${ch}” is not a valid character.`);
-    const raw = c.slice(0, -1);
-    if (checksum(raw) !== c[c.length - 1]) throw new Error('This code contains a typo. Please check it.');
+    const raw = c.slice(0, 1 + BODY_LENGTH);
+    if (format.check(raw) !== c.slice(raw.length)) throw new Error('This code contains a typo. Please check it.');
     let n = 0n;
     for (const ch of raw.slice(1)) n = n * 32n + BigInt(ALPHABET.indexOf(ch));
     const answers = [];
@@ -251,10 +271,10 @@
     return answers;
   }
 
-  function decodeCustom(part) {
+  function decodeCustom(part, format) {
     const damaged = new Error('This link is incomplete or damaged. Ask for it to be sent again.');
-    const b64 = part.slice(0, -1);
-    if (!b64 || textChecksum(b64) !== part[part.length - 1]) throw damaged;
+    const b64 = part.slice(0, -format.checkLength);
+    if (!b64 || format.textCheck(b64) !== part.slice(b64.length)) throw damaged;
     let text;
     try { text = fromBase64Url(b64); } catch (e) { throw damaged; }
     const custom = text.split('\n').map((line) => ({
@@ -271,9 +291,10 @@
   // Returns { answers, custom }, or throws an Error with a user-facing message.
   function decode(code) {
     const c = normalize(code);
+    const format = FORMATS[c[0]];
     const dot = c.indexOf('.');
-    if (dot < 0) return { answers: decodeAnswers(c), custom: [] };
-    return { answers: decodeAnswers(c.slice(0, dot)), custom: decodeCustom(c.slice(dot + 1)) };
+    if (dot < 0) return { answers: decodeAnswers(c, format), custom: [] };
+    return { answers: decodeAnswers(c.slice(0, dot), format), custom: decodeCustom(c.slice(dot + 1), format) };
   }
 
   // Groups of 5 characters for readability (codes without custom items only).
