@@ -23,12 +23,12 @@ Results are grouped into tiers:
 
 There is no backend. Everything lives in the link's fragment (`#…`), which browsers never send to the server:
 
-- `#<answers>`: the 78 fixed answers, packed as a base-5 number in Crockford base32, with a version prefix and a checksum. It's 39 characters, short enough to type as a code.
+- `#<answers>`: the fixed items' answers, packed as a base-5 number in Crockford base32, with a version prefix and a checksum. It's 39 characters, short enough to type as a code.
 - `#<answers>.<custom>`: when there are custom items, their category, rating and text, base64url-encoded with a checksum. A damaged or cut-off link is detected and reported.
 
 Custom items are matched by category and text. Drafts and links are also kept in the browser's `localStorage` for convenience. Anyone who has a link can decode its answers; nothing is encrypted.
 
-**Changing the menu:** fixed items are stored by position. Don't reorder, add or remove items in `js/menu.js` without bumping `CODE_VERSION`. Otherwise old links will decode to the wrong items.
+**Changing the menu:** answers are stored by position ("slot"). Never reorder or remove the plain-string items in `js/menu.js`. To add an item, write it as `{ text, slot }` with the next unused slot, anywhere in its category. Older links then show it as unanswered. The 39-character code has room for exactly 79 items, which the menu now uses. Adding an 80th item also needs a decoder change, or old codes will be rejected as the wrong length.
 
 ## Development
 

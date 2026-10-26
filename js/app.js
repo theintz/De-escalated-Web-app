@@ -20,7 +20,9 @@
 
   const isRating = (a) => Number.isInteger(a) && a >= M.NONE && a <= M.OFF;
   function validDraft(d) {
-    return Array.isArray(d) && d.length === M.ITEM_COUNT && d.every(isRating) ? d : null;
+    if (!Array.isArray(d) || d.length > M.ITEM_COUNT || !d.every(isRating)) return null;
+    // Drafts saved before items were added are shorter: new items start unanswered.
+    return d.concat(Array(M.ITEM_COUNT - d.length).fill(M.NONE));
   }
   function validCustom(list) {
     return Array.isArray(list) && list.length <= M.MAX_CUSTOM &&
@@ -112,13 +114,12 @@
   }
 
   function renderForm() {
-    let index = 0;
     const editable = canEditCustom();
     const canAdd = editable && state.custom.length < M.MAX_CUSTOM;
     $('menu-form').innerHTML = M.CATEGORIES.map((cat, ci) => `
       <fieldset class="category">
         <legend>${esc(cat.title)}</legend>
-        ${cat.items.map((item) => itemRow(`q${index}`, item, state.answers[index++])).join('')}
+        ${cat.items.map((item) => itemRow(`q${item.slot}`, item.text, state.answers[item.slot])).join('')}
         ${state.custom.map((c, j) => (c.category !== ci ? '' : itemRow(`c${j}`, c.text, c.rating,
           ' <span class="tag">custom</span>' +
           (editable ? ` <button type="button" class="remove" data-remove="${j}" aria-label="Remove ${esc(c.text)}">✕</button>` : '')))).join('')}

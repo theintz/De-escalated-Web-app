@@ -3,8 +3,11 @@
 (function (root) {
   'use strict';
 
-  // IMPORTANT: codes store answers by position. Never reorder, insert or remove
-  // items within a version; bump CODE_VERSION and keep the old list instead.
+  // IMPORTANT: codes store answers by position ("slot"). Plain strings get slots
+  // 0, 1, 2, … in order, so never reorder, insert or remove them. To add an item,
+  // write it as { text, slot } with the next unused slot, anywhere in the list:
+  // older codes then show it as unanswered. Note: 79 slots fill the 39-character
+  // code; an 80th item makes codes longer and needs decodeAnswers to accept old lengths.
   const CATEGORIES = [
     {
       title: 'Commitment',
@@ -111,6 +114,7 @@
         'Financial support',
         'Large gifts',
         'Complete financial integration',
+        { text: 'Equal/fair share of joint costs (e.g. for a shared vacation)', slot: 78 },
       ],
     },
     {
@@ -135,7 +139,14 @@
     { value: OFF, label: 'Off limits', short: 'Off', icon: '⊘', description: 'Preferably never' },
   ];
 
+  // Normalize every item to { text, slot }.
+  let nextSlot = 0;
+  for (const cat of CATEGORIES) {
+    cat.items = cat.items.map((item) => (typeof item === 'string' ? { text: item, slot: nextSlot++ } : item));
+  }
   const ITEM_COUNT = CATEGORIES.reduce((n, c) => n + c.items.length, 0);
+  const slots = CATEGORIES.flatMap((c) => c.items.map((i) => i.slot)).sort((a, b) => a - b);
+  if (slots.some((s, i) => s !== i)) throw new Error('Menu item slots must be unique and consecutive');
   const MAX_CUSTOM = 10;
   const MAX_CUSTOM_LENGTH = 60;
 
@@ -294,7 +305,6 @@
 
   // mine, theirs: { answers, custom } as returned by decode().
   function compare(mine, theirs) {
-    let index = 0;
     const counts = Object.fromEntries(Object.keys(TIERS).map((k) => [k, 0]));
     const theirCustom = new Map(theirs.custom.map((c) => [customKey(c), c]));
     const myKeys = new Set(mine.custom.map(customKey));
@@ -304,11 +314,7 @@
       return r;
     };
     const categories = CATEGORIES.map((cat, ci) => {
-      const rows = cat.items.map((item) => {
-        const r = row(item, mine.answers[index], theirs.answers[index], false);
-        index++;
-        return r;
-      });
+      const rows = cat.items.map((item) => row(item.text, mine.answers[item.slot], theirs.answers[item.slot], false));
       for (const c of mine.custom.filter((c) => c.category === ci)) {
         const t = theirCustom.get(customKey(c));
         rows.push(row(c.text, c.rating, t ? t.rating : NONE, true));

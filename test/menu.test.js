@@ -4,8 +4,22 @@ const Menu = require('../js/menu.js');
 
 const random = () => Array.from({ length: Menu.ITEM_COUNT }, () => Math.floor(Math.random() * 5));
 
-test('form has all 78 items', () => {
-  assert.equal(Menu.ITEM_COUNT, 78);
+test('form has the 78 original items plus 1 added later', () => {
+  assert.equal(Menu.ITEM_COUNT, 79);
+});
+
+test('codes from before an item was added still decode', () => {
+  // Generated with the 78-item menu: answers[i] = (i * 3 + 1) % 5.
+  const old = Array.from({ length: 78 }, (_, i) => (i * 3 + 1) % 5);
+  const expected = old.concat([Menu.NONE]);
+  assert.deepEqual(Menu.decode('117JS4B0KXQ43S9D927NX771JVRRWGNHE9VYDSH').answers, expected);
+  const withCustom = Menu.decode('117JS4B0KXQ43S9D927NX771JVRRWGNHE9VYDSH.NjJPbGQgY3VzdG9tW');
+  assert.deepEqual(withCustom.answers, expected);
+  assert.deepEqual(withCustom.custom, [{ category: 6, text: 'Old custom', rating: Menu.LIKE }]);
+  // The new item is shown under Financial Management but stored in the last slot.
+  const finance = Menu.CATEGORIES.find((c) => c.title === 'Financial Management');
+  assert.equal(finance.items.at(-1).slot, 78);
+  assert.equal(Menu.CATEGORIES.at(-1).items[0].slot, 72);
 });
 
 test('encode/decode round-trips', () => {
@@ -13,7 +27,7 @@ test('encode/decode round-trips', () => {
     const answers = random();
     assert.deepEqual(Menu.decode(Menu.encode(answers)), { answers, custom: [] });
   }
-  const extremes = [Array(78).fill(0), Array(78).fill(4)];
+  const extremes = [Array(Menu.ITEM_COUNT).fill(0), Array(Menu.ITEM_COUNT).fill(4)];
   for (const a of extremes) assert.deepEqual(Menu.decode(Menu.encode(a)).answers, a);
 });
 
@@ -50,7 +64,7 @@ test('tiers', () => {
 
 test('codes without custom items keep the original format', () => {
   // Links shared before custom items existed must keep working.
-  const answers = Array.from({ length: 78 }, (_, i) => i % 5);
+  const answers = Array.from({ length: Menu.ITEM_COUNT }, (_, i) => i % 5);
   const code = Menu.encode(answers);
   assert.match(code, /^1[0-9A-Z]{38}$/);
   assert.equal(Menu.encode(answers, []), code);
@@ -85,11 +99,11 @@ test('damaged or truncated custom part is rejected', () => {
 });
 
 test('compare matches custom items by category and text', () => {
-  const a = { answers: Array(78).fill(Menu.MUST), custom: [
+  const a = { answers: Array(Menu.ITEM_COUNT).fill(Menu.MUST), custom: [
     { category: 0, text: 'Sauna', rating: Menu.MUST },
     { category: 1, text: 'Only mine', rating: Menu.LIKE },
   ] };
-  const b = { answers: Array(78).fill(Menu.MUST), custom: [
+  const b = { answers: Array(Menu.ITEM_COUNT).fill(Menu.MUST), custom: [
     { category: 0, text: 'sauna', rating: Menu.OFF },
     { category: 2, text: 'Only theirs', rating: Menu.MAYBE },
   ] };
@@ -100,7 +114,7 @@ test('compare matches custom items by category and text', () => {
     ['Only mine', Menu.LIKE, Menu.NONE, 'unanswered'],
     ['Only theirs', Menu.NONE, Menu.MAYBE, 'unanswered'],
   ]);
-  assert.equal(counts.match, 78);
+  assert.equal(counts.match, Menu.ITEM_COUNT);
 });
 
 test('mergeCustom adopts partner items and keeps own ratings', () => {
@@ -115,6 +129,6 @@ test('mergeCustom adopts partner items and keeps own ratings', () => {
 
 test('compare counts every item once', () => {
   const { counts, categories } = Menu.compare({ answers: random(), custom: [] }, { answers: random(), custom: [] });
-  assert.equal(Object.values(counts).reduce((a, b) => a + b, 0), 78);
+  assert.equal(Object.values(counts).reduce((a, b) => a + b, 0), Menu.ITEM_COUNT);
   assert.equal(categories.length, 8);
 });
