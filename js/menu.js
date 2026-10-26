@@ -136,6 +136,15 @@
   ];
 
   const ITEM_COUNT = CATEGORIES.reduce((n, c) => n + c.items.length, 0);
+  const MAX_CUSTOM = 10;
+  const MAX_CUSTOM_LENGTH = 60;
+
+  // ---- code format ----
+  // A code is "<answers>" or "<answers>.<custom items>".
+  // <answers>: version digit + the fixed items' answers as one base-5 number in
+  //   Crockford base32 + checksum. Short enough to type.
+  // <custom items>: base64url of "<category><rating><text>" lines + checksum.
+  //   Only present when the menu has custom items; then the code is shared as a link.
   const CODE_VERSION = '1';
   // Crockford base32: no I, L, O, U, so codes are easy to read and type.
   const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
@@ -149,7 +158,30 @@
     return ALPHABET[sum % 32];
   }
 
-  function encode(answers) {
+  // Checksum for the custom part. Always alphanumeric, so the link never ends in
+  // "-" or "_", which messengers may leave out of the link.
+  function textChecksum(s) {
+    let sum = 0;
+    for (let i = 0; i < s.length; i++) sum = (sum * 31 + s.charCodeAt(i)) % 1021;
+    return ALPHABET[sum % 32];
+  }
+
+  function cleanText(text) {
+    return Array.from(String(text).replace(/\s+/g, ' ').trim()).slice(0, MAX_CUSTOM_LENGTH).join('');
+  }
+
+  function toBase64Url(text) {
+    let binary = '';
+    for (const byte of new TextEncoder().encode(text)) binary += String.fromCharCode(byte);
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  function fromBase64Url(b64) {
+    const binary = atob(b64.replace(/-/g, '+').replace(/_/g, '/'));
+    return new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(binary, (c) => c.charCodeAt(0)));
+  }
+
+  function encodeAnswers(answers) {
     if (answers.length !== ITEM_COUNT) throw new Error('Wrong number of answers');
     let n = 0n;
     for (let i = answers.length - 1; i >= 0; i--) {
@@ -166,17 +198,31 @@
     return raw + checksum(raw);
   }
 
-  function normalize(code) {
-    return String(code)
-      .toUpperCase()
-      .replace(/[\s-]/g, '')
-      .replace(/O/g, '0')
-      .replace(/[IL]/g, '1');
+  // custom: [{ category, text, rating }]
+  function encode(answers, custom = []) {
+    const code = encodeAnswers(answers);
+    if (!custom.length) return code;
+    if (custom.length > MAX_CUSTOM) throw new Error('Too many custom items');
+    const lines = custom.map((c) => {
+      const text = cleanText(c.text);
+      if (!text || !CATEGORIES[c.category] || c.rating < NONE || c.rating > OFF) throw new Error('Invalid custom item');
+      return `${c.category}${c.rating}${text}`;
+    });
+    const b64 = toBase64Url(lines.join('\n'));
+    return `${code}.${b64}${textChecksum(b64)}`;
   }
 
-  // Returns the answers array, or throws an Error with a user-facing message.
-  function decode(code) {
-    const c = normalize(code);
+  function normalizeAnswers(code) {
+    return code.toUpperCase().replace(/-/g, '').replace(/O/g, '0').replace(/[IL]/g, '1');
+  }
+
+  function normalize(code) {
+    const s = String(code).replace(/\s/g, '');
+    const dot = s.indexOf('.');
+    return dot < 0 ? normalizeAnswers(s) : normalizeAnswers(s.slice(0, dot)) + s.slice(dot);
+  }
+
+  function decodeAnswers(c) {
     if (!c) throw new Error('Please enter a code.');
     if (c[0] !== CODE_VERSION) throw new Error('This code is from a different version of the menu.');
     if (c.length !== CODE_LENGTH) throw new Error('This code has the wrong length. Check for missing or extra characters.');
@@ -194,11 +240,38 @@
     return answers;
   }
 
-  // Groups of 5 characters for readability.
-  function format(code) {
-    return normalize(code).match(/.{1,5}/g).join('-');
+  function decodeCustom(part) {
+    const damaged = new Error('This link is incomplete or damaged. Ask for it to be sent again.');
+    const b64 = part.slice(0, -1);
+    if (!b64 || textChecksum(b64) !== part[part.length - 1]) throw damaged;
+    let text;
+    try { text = fromBase64Url(b64); } catch (e) { throw damaged; }
+    const custom = text.split('\n').map((line) => ({
+      category: Number(line[0]),
+      rating: Number(line[1]),
+      text: cleanText(line.slice(2)),
+    }));
+    const valid = custom.length <= MAX_CUSTOM && custom.every((c) =>
+      CATEGORIES[c.category] && c.rating >= NONE && c.rating <= OFF && c.text);
+    if (!valid) throw damaged;
+    return custom;
   }
 
+  // Returns { answers, custom }, or throws an Error with a user-facing message.
+  function decode(code) {
+    const c = normalize(code);
+    const dot = c.indexOf('.');
+    if (dot < 0) return { answers: decodeAnswers(c), custom: [] };
+    return { answers: decodeAnswers(c.slice(0, dot)), custom: decodeCustom(c.slice(dot + 1)) };
+  }
+
+  // Groups of 5 characters for readability (codes without custom items only).
+  function format(code) {
+    const c = normalize(code);
+    return c.includes('.') ? c : c.match(/.{1,5}/g).join('-');
+  }
+
+  // ---- comparison ----
   // Comparison tiers, ordered from best to worst.
   const TIERS = {
     match: { label: 'Match', description: 'Same answer' },
@@ -216,24 +289,53 @@
     return 'close'; // the only remaining pair is must vs. like
   }
 
+  // Custom items are matched by category and text.
+  const customKey = (c) => `${c.category}|${c.text.toLowerCase()}`;
+
+  // mine, theirs: { answers, custom } as returned by decode().
   function compare(mine, theirs) {
     let index = 0;
     const counts = Object.fromEntries(Object.keys(TIERS).map((k) => [k, 0]));
-    const categories = CATEGORIES.map((cat) => ({
-      title: cat.title,
-      rows: cat.items.map((item) => {
-        const row = { item, mine: mine[index], theirs: theirs[index], tier: tier(mine[index], theirs[index]) };
-        counts[row.tier]++;
+    const theirCustom = new Map(theirs.custom.map((c) => [customKey(c), c]));
+    const myKeys = new Set(mine.custom.map(customKey));
+    const row = (item, a, b, custom) => {
+      const r = { item, mine: a, theirs: b, tier: tier(a, b), custom };
+      counts[r.tier]++;
+      return r;
+    };
+    const categories = CATEGORIES.map((cat, ci) => {
+      const rows = cat.items.map((item) => {
+        const r = row(item, mine.answers[index], theirs.answers[index], false);
         index++;
-        return row;
-      }),
-    }));
+        return r;
+      });
+      for (const c of mine.custom.filter((c) => c.category === ci)) {
+        const t = theirCustom.get(customKey(c));
+        rows.push(row(c.text, c.rating, t ? t.rating : NONE, true));
+      }
+      for (const c of theirs.custom.filter((c) => c.category === ci && !myKeys.has(customKey(c)))) {
+        rows.push(row(c.text, NONE, c.rating, true));
+      }
+      return { title: cat.title, rows };
+    });
     return { categories, counts };
   }
 
+  // A recipient adopts the sender's custom items, keeping their own ratings for
+  // items with the same text and any items of their own the sender doesn't have.
+  function mergeCustom(own, partners) {
+    const ownByKey = new Map(own.map((c) => [customKey(c), c]));
+    const merged = partners.map((c) => {
+      const o = ownByKey.get(customKey(c));
+      return { category: c.category, text: c.text, rating: o ? o.rating : NONE };
+    });
+    const partnerKeys = new Set(partners.map(customKey));
+    return merged.concat(own.filter((c) => !partnerKeys.has(customKey(c)))).slice(0, MAX_CUSTOM);
+  }
+
   const api = {
-    CATEGORIES, RATINGS, TIERS, ITEM_COUNT, NONE, MUST, LIKE, MAYBE, OFF,
-    encode, decode, format, normalize, tier, compare,
+    CATEGORIES, RATINGS, TIERS, ITEM_COUNT, MAX_CUSTOM, MAX_CUSTOM_LENGTH, NONE, MUST, LIKE, MAYBE, OFF,
+    encode, decode, format, normalize, cleanText, tier, compare, mergeCustom,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Menu = api;

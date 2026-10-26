@@ -4,9 +4,10 @@ A static web app for two people to fill out a non-escalator relationship menu on
 
 ## How it works
 
-1. Each person rates every item: **Must have**, **Like to have**, **Maybe** or **Off limits**.
-2. Each person gets a code (e.g. `110ZT-ET0KJ-…`) and a share link (`https://…/#110ZTET0KJ…`), sent with a **Send via WhatsApp** button, the phone's share sheet, or copy and paste.
-3. Entering the partner's code, or opening their link, shows both sets of answers side by side. It only works once you've submitted your own answers.
+1. Person A fills out the menu and rates items as **Must have**, **Like to have**, **Maybe** or **Off limits**. Any item can be skipped. A can add up to 10 custom items (60 characters each).
+2. **Get my link** creates a link with A's answers. A sends it with **Send via WhatsApp**, the phone's share sheet, or copy and paste.
+3. Person B opens the link and goes straight to the form, which includes A's custom items. B can't add more, so both rate the same list. **Show results** reveals the comparison at any time.
+4. The results page has B's link, so B can send their answers back. When A opens it, A goes straight to the results.
 
 Results are grouped into tiers:
 
@@ -20,11 +21,14 @@ Results are grouped into tiers:
 
 ## Stateless by design
 
-There is no backend. The code is the answers themselves: 78 answers packed as a base-5 number, written in Crockford base32, with a version prefix and a checksum character. The share link puts the code in the URL fragment (`#CODE`, letters and digits only), so it survives being pasted into any messenger and is never sent to the server. Drafts and codes are kept in the browser's `localStorage` for convenience.
+There is no backend. Everything lives in the link's fragment (`#…`), which browsers never send to the server:
 
-Anyone who has a code can decode its answers. The code is not encrypted.
+- `#<answers>`: the 78 fixed answers, packed as a base-5 number in Crockford base32, with a version prefix and a checksum. It's 39 characters, short enough to type as a code.
+- `#<answers>.<custom>`: when there are custom items, their category, rating and text, base64url-encoded with a checksum. A damaged or cut-off link is detected and reported.
 
-**Changing the menu:** codes store answers by position. Don't reorder, add or remove items in `js/menu.js` without bumping `CODE_VERSION`. Otherwise old codes will decode to the wrong items.
+Custom items are matched by category and text. Drafts and links are also kept in the browser's `localStorage` for convenience. Anyone who has a link can decode its answers; nothing is encrypted.
+
+**Changing the menu:** fixed items are stored by position. Don't reorder, add or remove items in `js/menu.js` without bumping `CODE_VERSION`. Otherwise old links will decode to the wrong items.
 
 ## Development
 

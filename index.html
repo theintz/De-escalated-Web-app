@@ -15,60 +15,65 @@
   <main>
     <!-- Intro -->
     <section id="view-intro" class="view">
-      <div id="partner-notice" class="notice" hidden>
-        Your partner has filled out their menu. Fill out yours to see how your answers compare.
-        Their answers stay hidden until you've submitted yours.
+      <div id="link-error" class="notice error-notice" role="alert" hidden></div>
+      <div class="about">
+        <p>
+          This tool is a discussion aid for people in a relationship to identify and discuss their
+          personal desires and relationship expectations. It's only the start of a conversation:
+          revisit the menu when circumstances or relationships change.
+        </p>
+        <ol class="steps">
+          <li>Fill out the menu. Skip anything you like, and add your own items if something is missing.</li>
+          <li>Send your link to your partner. They fill out the same menu.</li>
+          <li>You both see where your answers match.</li>
+        </ol>
+        <p class="muted small">
+          Nothing is stored on a server. Your answers live only in your link and in this browser.
+          Anyone who has your link can see your answers, so only share it with your partner.
+        </p>
       </div>
-      <p>
-        This tool is a discussion aid for people in a relationship to identify and discuss their
-        personal desires and relationship expectations. It's only the start of a conversation:
-        revisit the menu when circumstances or relationships change.
-      </p>
-      <ol class="steps">
-        <li>Each of you fills out the menu on your own.</li>
-        <li>You each get a code. Send yours to the other person.</li>
-        <li>Enter the other person's code to see where your answers match.</li>
-      </ol>
-      <p class="muted small">
-        Nothing is stored on a server. Your answers live only in your code and in this browser.
-        Anyone who has your code can see your answers, so only share it with your partner.
-      </p>
       <div class="actions">
-        <button id="btn-start" class="primary">Fill out the menu</button>
-        <button id="btn-have-code" class="secondary" hidden>I already have my code</button>
+        <button id="btn-start" class="primary" type="button">Fill out the menu</button>
+        <button id="btn-have-code" class="secondary" type="button">I have a code</button>
       </div>
     </section>
 
     <!-- Form -->
     <section id="view-form" class="view" hidden>
+      <div id="form-notice" class="notice" hidden>
+        <strong>Your partner has shared their answers.</strong>
+        Fill out your menu to see how they compare. You can skip items and show the results at any time.
+        <details>
+          <summary>What is this?</summary>
+          <div id="form-about"></div>
+        </details>
+      </div>
       <div class="legend" id="legend"></div>
       <form id="menu-form"></form>
       <div class="actions sticky">
         <span id="progress" class="muted small"></span>
-        <button id="btn-submit" class="primary" type="button">Done – get my code</button>
+        <button id="btn-submit" class="primary" type="button">Get my link</button>
       </div>
     </section>
 
-    <!-- My code -->
+    <!-- My link -->
     <section id="view-code" class="view" hidden>
-      <h2>Your code</h2>
-      <p>Send the link to your partner. Opening it lets them compare once they've filled out theirs.</p>
-      <div class="actions share">
-        <a id="btn-whatsapp" class="button primary" href="#" target="_blank" rel="noopener">Send via WhatsApp</a>
-        <button id="btn-share" class="secondary" type="button" hidden>Share…</button>
+      <h2>Your link</h2>
+      <p>Send the link to your partner. Opening it lets them fill out their menu and then compare.</p>
+      <div id="code-share"></div>
+      <div id="short-code">
+        <p class="muted small">Or send just the code. They can enter it after filling out their own menu.</p>
+        <div class="code-box">
+          <code id="my-code"></code>
+          <button id="btn-copy-code" class="secondary small-btn" type="button">Copy code</button>
+        </div>
       </div>
-      <div class="code-box">
-        <input id="my-link" readonly aria-label="Share link">
-        <button id="btn-copy-link" class="secondary small-btn" type="button">Copy link</button>
-      </div>
-      <p class="muted small">Or send just the code. They can enter it after filling out their own menu.</p>
-      <div class="code-box">
-        <code id="my-code"></code>
-        <button id="btn-copy-code" class="secondary small-btn" type="button">Copy code</button>
-      </div>
-      <p class="muted small">Keep your own code too. You can use it to come back to your answers later.</p>
+      <p id="custom-note" class="muted small" hidden>
+        Your menu includes custom items, so share the link: it carries them to your partner.
+      </p>
+      <p class="muted small">Keep your link too. You can use it to come back to your answers later.</p>
       <div class="actions">
-        <button id="btn-to-compare" class="primary" type="button">Compare with partner</button>
+        <button id="btn-to-compare" class="primary" type="button">Enter partner's code</button>
         <button id="btn-edit" class="secondary" type="button">Edit my answers</button>
       </div>
     </section>
@@ -76,6 +81,7 @@
     <!-- Compare -->
     <section id="view-compare" class="view" hidden>
       <h2>Compare</h2>
+      <p class="muted small">Paste a code or a whole link.</p>
       <form id="compare-form" novalidate>
         <label for="input-mine">Your code</label>
         <input id="input-mine" autocomplete="off" spellcheck="false" placeholder="1XXXX-XXXXX-…">
@@ -92,10 +98,16 @@
     <!-- Results -->
     <section id="view-results" class="view" hidden>
       <h2>Results</h2>
+      <div class="share-box">
+        <strong>Share your answers</strong>
+        <p class="muted small">Your partner needs your link to see these results too.</p>
+        <div id="results-share"></div>
+      </div>
       <p class="muted small">Tap a category to filter. This is a starting point for a conversation, not a verdict.</p>
       <div id="summary" class="summary"></div>
       <div id="results"></div>
       <div class="actions">
+        <button id="btn-results-edit" class="secondary" type="button">Edit my answers</button>
         <button id="btn-print" class="secondary" type="button">Print</button>
         <button id="btn-restart" class="secondary" type="button">Start over</button>
       </div>
