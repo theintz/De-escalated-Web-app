@@ -62,7 +62,7 @@
       title: 'Physical Intimacy',
       items: [
         'Physical affection',
-        'PDA',
+        'PDA (public displays of affection)',
         'Compatible sex drives',
         'Sexual chemistry',
         'Orgasms',
